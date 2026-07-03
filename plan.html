@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PNGTuber Web — 開発プラン</title>
+<style>
+  :root {
+    --bg: #f7f7fa;
+    --card: #ffffff;
+    --ink: #1f2430;
+    --sub: #5a6072;
+    --accent: #6c5ce7;
+    --accent-soft: #edeaff;
+    --border: #e3e5ee;
+    --code-bg: #f1f2f8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161d;
+      --card: #1d2029;
+      --ink: #e8eaf2;
+      --sub: #a0a6ba;
+      --accent: #8f82f5;
+      --accent-soft: #2a2745;
+      --border: #2c3040;
+      --code-bg: #262a38;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.8;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 16px 80px; }
+  header.hero {
+    background: linear-gradient(135deg, var(--accent), #a29bfe);
+    color: #fff;
+    border-radius: 16px;
+    padding: 32px 28px;
+    margin-bottom: 32px;
+  }
+  header.hero h1 { margin: 0 0 8px; font-size: 1.6rem; }
+  header.hero p { margin: 0; opacity: .92; }
+  h2 {
+    font-size: 1.25rem;
+    border-left: 5px solid var(--accent);
+    padding-left: 12px;
+    margin: 48px 0 16px;
+  }
+  h3 { font-size: 1.05rem; margin: 28px 0 8px; }
+  section.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); }
+  .table-scroll { overflow-x: auto; }
+  code, pre {
+    font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+    background: var(--code-bg);
+    border-radius: 6px;
+  }
+  code { padding: 2px 6px; font-size: .9em; }
+  pre { padding: 16px; overflow-x: auto; line-height: 1.6; font-size: .85rem; }
+  pre code { padding: 0; background: none; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 4px 0; }
+  .badge {
+    display: inline-block;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 999px;
+    padding: 2px 12px;
+    font-size: .8rem;
+    font-weight: bold;
+    margin-right: 6px;
+  }
+  .muted { color: var(--sub); font-size: .9rem; }
+  .phase { border-left: 4px solid var(--accent); padding-left: 16px; margin: 16px 0; }
+  .phase strong { display: block; margin-bottom: 4px; }
+  .tree { white-space: pre; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>🎭 PNGTuber Web — 開発プラン</h1>
+  <p>スマホのブラウザとカメラだけで完結する PNGTuber 表示ページを GitHub Pages で公開する</p>
+</header>
+
+<h2>1. コンセプト</h2>
+<section class="card">
+  <p>
+    インストール不要・サーバ不要で、<strong>スマホ 1 台だけで PNGTuber(立ち絵の口パク・まばたきアバター)を動かせる</strong> Web ページを作る。
+    ブラウザの <code>getUserMedia</code> でフロントカメラの映像を取得し、顔認識(MediaPipe Face Landmarker)で
+    口の開閉・まばたき・顔の傾きを検出して、PNG 立ち絵をリアルタイムに切り替え・アニメーションさせる。
+  </p>
+  <ul>
+    <li><span class="badge">静的</span>GitHub Pages のみで動作(ビルド不要、サーバサイド処理なし)</li>
+    <li><span class="badge">プライバシー</span>カメラ映像は端末内で処理し、外部送信しない</li>
+    <li><span class="badge">モバイル完結</span>画像の読み込みから配信画面の表示まで、すべてスマホで操作可能</li>
+  </ul>
+</section>
+
+<h2>2. 主要ユースケース</h2>
+<section class="card">
+  <ol>
+    <li>スマホでページを開く → カメラ許可 → 自分の立ち絵 PNG を選択 → 喋ると口パクするアバターが全画面表示される</li>
+    <li>雑談配信・通話でスマホ画面をそのまま見せる、または PC の OBS のブラウザソースとして同じページを読み込む</li>
+    <li>立ち絵を持っていない人向けに、サンプルアバターを同梱してすぐ試せるようにする</li>
+  </ol>
+</section>
+
+<h2>3. 機能一覧</h2>
+<section class="card">
+  <h3>MVP(必須)</h3>
+  <div class="table-scroll">
+  <table>
+    <tr><th>機能</th><th>内容</th></tr>
+    <tr><td>カメラ入力</td><td><code>getUserMedia</code> でフロントカメラを取得。カメラ切替(イン/アウト)対応</td></tr>
+    <tr><td>口パク検出</td><td>MediaPipe Face Landmarker の blendshape(<code>jawOpen</code> など)で口の開閉を判定し、口閉じ/口開き画像を切替</td></tr>
+    <tr><td>まばたき検出</td><td><code>eyeBlinkLeft / eyeBlinkRight</code> で目閉じ画像に切替</td></tr>
+    <tr><td>画像アップロード</td><td>口閉じ・口開き・目閉じの PNG を <code>&lt;input type="file"&gt;</code> で読み込み(端末内処理のみ)</td></tr>
+    <tr><td>アバター描画</td><td>Canvas に描画。喋っているあいだは軽く揺れる(バウンス)演出</td></tr>
+    <tr><td>背景色変更</td><td>単色背景(グリーンバック含む)をカラーピッカーで変更 → OBS のクロマキーに対応</td></tr>
+    <tr><td>設定の保存</td><td>感度・背景色・画像を <code>localStorage</code> / IndexedDB に保存し、次回起動時に復元</td></tr>
+    <tr><td>サンプルアバター</td><td>同梱のサンプル画像で、画像を用意しなくても即体験できる</td></tr>
+  </table>
+  </div>
+
+  <h3>拡張(後続フェーズ)</h3>
+  <ul>
+    <li>顔の傾き(roll)に追従してアバターを回転</li>
+    <li>マイク音量ベースの口パク(顔認識が使えない環境向けフォールバック)</li>
+    <li>表情プリセット(喜び・驚きなど)のタップ切替、複数コスチューム</li>
+    <li>感度・しきい値の調整 UI(スライダー)</li>
+    <li>PWA 化(ホーム画面追加・オフライン起動)</li>
+  </ul>
+</section>
+
+<h2>4. 技術スタック</h2>
+<section class="card">
+  <div class="table-scroll">
+  <table>
+    <tr><th>領域</th><th>採用技術</th><th>備考</th></tr>
+    <tr><td>ホスティング</td><td>GitHub Pages</td><td>HTTPS 配信なので <code>getUserMedia</code> が利用可能</td></tr>
+    <tr><td>フロントエンド</td><td>素の HTML / CSS / JavaScript(ES Modules)</td><td>ビルドツールなし。スマホで編集・確認しやすい構成</td></tr>
+    <tr><td>顔認識</td><td>MediaPipe Tasks Vision(Face Landmarker)</td><td>CDN から読み込み。blendshape 52 種で口・目・眉を判定</td></tr>
+    <tr><td>描画</td><td>Canvas 2D</td><td>PNG 切替+トランスフォームで十分。将来 WebGL 化も可能</td></tr>
+    <tr><td>保存</td><td>localStorage + IndexedDB</td><td>設定値は localStorage、画像バイナリは IndexedDB</td></tr>
+  </table>
+  </div>
+</section>
+
+<h2>5. 画面構成</h2>
+<section class="card">
+  <ul>
+    <li><strong>メイン画面(index.html)</strong>: アバター全画面表示。タップで設定パネルの表示/非表示をトグル</li>
+    <li><strong>設定パネル(オーバーレイ)</strong>: 画像選択(口閉じ/口開き/目閉じ)、背景色、感度スライダー、カメラ切替、カメラプレビュー(小窓・オフ可)</li>
+    <li><strong>ステータス表示</strong>: カメラ許可待ち / モデル読込中 / 顔未検出 などの状態を明示</li>
+  </ul>
+  <p class="muted">スマホ縦持ちを基準にデザインし、横持ち・PC 表示(OBS ブラウザソース)にもレスポンシブ対応する。</p>
+</section>
+
+<h2>6. ファイル構成(予定)</h2>
+<section class="card">
+  <pre class="tree"><code>/
+├── index.html          … メイン画面(PNGTuber 表示)
+├── plan.html           … このプラン文書
+├── css/
+│   └── style.css
+├── js/
+│   ├── app.js          … 初期化・UI 制御
+│   ├── camera.js       … getUserMedia ラッパー
+│   ├── face.js         … MediaPipe Face Landmarker 連携
+│   ├── avatar.js       … Canvas 描画・状態遷移(口/目/揺れ)
+│   └── storage.js      … 設定・画像の保存/復元
+├── assets/
+│   └── sample/         … サンプルアバター画像(閉口/開口/閉眼)
+└── README.md
+</code></pre>
+</section>
+
+<h2>7. 開発フェーズ</h2>
+<section class="card">
+  <div class="phase">
+    <strong>Phase 1 — MVP(まずここまで)</strong>
+    カメラ取得 → 顔認識 → サンプルアバターの口パク・まばたきが動く index.html を GitHub Pages で公開する。
+  </div>
+  <div class="phase">
+    <strong>Phase 2 — カスタマイズ</strong>
+    画像アップロード、背景色変更、感度調整、設定の永続化。
+  </div>
+  <div class="phase">
+    <strong>Phase 3 — 品質向上</strong>
+    顔の傾き追従、マイク音量フォールバック、表情プリセット、PWA 化。
+  </div>
+</section>
+
+<h2>8. リスクと対策</h2>
+<section class="card">
+  <div class="table-scroll">
+  <table>
+    <tr><th>リスク</th><th>対策</th></tr>
+    <tr><td>iOS Safari のカメラ制約(ユーザー操作起点でないと再生不可 など)</td><td>「開始」ボタンのタップを起点にカメラとモデルを初期化する</td></tr>
+    <tr><td>MediaPipe の WASM/モデル読込が遅い・失敗する</td><td>読込中インジケータ表示。失敗時はマイク音量口パクへフォールバック(Phase 3)</td></tr>
+    <tr><td>スマホでの発熱・電池消費</td><td>推論フレームレートを制御(例: 24fps 上限)。カメラプレビューはオフ可能に</td></tr>
+    <tr><td>バックグラウンドタブで停止する</td><td>Wake Lock API + 画面常時点灯の案内を表示</td></tr>
+    <tr><td>プライバシー懸念</td><td>映像を外部送信しないことを README とページ内に明記</td></tr>
+  </table>
+  </div>
+</section>
+
+<h2>9. 実装用プロンプト(コピーして使えます)</h2>
+<section class="card">
+  <p class="muted">次のステップで実装を依頼するときは、以下のプロンプトをそのまま使ってください。</p>
+  <pre><code>GitHub Pages で公開できる「ブラウザ完結型 PNGTuber」を実装してください。
+
+## ゴール
+スマホのブラウザだけで、フロントカメラの顔認識により PNG 立ち絵が
+口パク・まばたきするページを作る。サーバ処理・ビルドツールは使わず、
+静的ファイルのみで構成する。
+
+## 要件
+1. index.html をエントリポイントとし、素の HTML/CSS/JS(ES Modules)で実装する
+2. getUserMedia でフロントカメラを取得する(「開始」ボタンのタップを起点に初期化)
+3. MediaPipe Tasks Vision の Face Landmarker(CDN 読込)で blendshape を取得し、
+   - jawOpen で口の開閉 → 口閉じ/口開き画像を切替
+   - eyeBlinkLeft/Right で目閉じ画像に切替
+   - 発話中はアバターを軽く揺らす
+4. 立ち絵は「口閉じ」「口開き」「目閉じ」の 3 枚を file input で読み込めるようにし、
+   IndexedDB に保存して次回復元する。未設定時は同梱のサンプル画像を使う
+5. 背景は単色(カラーピッカーで変更、デフォルトはグリーンバック #00FF00)
+6. 検出感度(口・目のしきい値)をスライダーで調整でき、localStorage に保存する
+7. 画面はスマホ縦持ち基準のレスポンシブ。アバターは全画面表示し、
+   画面タップで設定パネルをトグル表示する
+8. カメラ映像は端末内でのみ処理し、外部送信しないことをページ内に明記する
+9. カメラ許可待ち・モデル読込中・顔未検出のステータスを表示する
+10. GitHub Pages(リポジトリ直下配信)でそのまま動くパス構成にする
+
+## 成果物
+- index.html / css / js / サンプルアバター画像
+- README.md(使い方・GitHub Pages の有効化手順・OBS ブラウザソースでの取込方法)
+</code></pre>
+</section>
+
+<h2>10. 次のアクション</h2>
+<section class="card">
+  <ol>
+    <li><strong>✓ プラン承認・マージ完了</strong></li>
+    <li>Phase 1 の実装(セクション 9 の「実装用プロンプト」を使用)</li>
+    <li>リポジトリの Settings → Pages でブランチ公開を有効化して動作確認</li>
+  </ol>
+</section>
+
+<footer class="muted" style="margin-top:48px; text-align:center;">
+  PNGTuber Web 開発プラン — moirai リポジトリ
+</footer>
+
+</div>
+</body>
+</html>
