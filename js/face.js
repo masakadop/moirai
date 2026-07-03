@@ -23,9 +23,14 @@ export async function loadFaceLandmarker() {
   return landmarker;
 }
 
-// しきい値(Phase 2 でスライダー化予定)
-const MOUTH_OPEN_THRESHOLD = 0.25;
-const BLINK_THRESHOLD = 0.45;
+// しきい値(設定パネルのスライダーから変更可能)
+let mouthThreshold = 0.25;
+let blinkThreshold = 0.45;
+
+export function setThresholds({ mouth, blink }) {
+  if (mouth != null) mouthThreshold = mouth;
+  if (blink != null) blinkThreshold = blink;
+}
 
 /**
  * 1 フレーム分の検出を行い、アバター状態を返す。
@@ -51,8 +56,8 @@ export function detectFace(videoEl, timestampMs) {
 
   return {
     detected: true,
-    mouthOpen: jawOpen > MOUTH_OPEN_THRESHOLD,
-    blinking: blinkL > BLINK_THRESHOLD && blinkR > BLINK_THRESHOLD,
+    mouthOpen: jawOpen > mouthThreshold,
+    blinking: blinkL > blinkThreshold && blinkR > blinkThreshold,
     mouthLevel: jawOpen,
   };
 }
