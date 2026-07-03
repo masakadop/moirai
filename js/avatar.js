@@ -1,12 +1,15 @@
 // Canvas 描画: 画像切替(口/目)+ 発話中のバウンス演出
 
-const IMAGE_PATHS = {
+const SAMPLE_PATHS = {
   closed: "assets/sample/closed.png", // 待機(目開き・口閉じ)
   open: "assets/sample/open.png",     // 発話(口開き)
   blink: "assets/sample/blink.png",   // まばたき(目閉じ)
 };
 
-const images = {};
+export const IMAGE_SLOTS = Object.keys(SAMPLE_PATHS);
+
+const samples = {};
+const custom = {};
 let canvas = null;
 let ctx = null;
 let bgColor = "#00ff00";
@@ -15,6 +18,15 @@ let bgColor = "#00ff00";
 let bouncePhase = 0;
 let bounceAmp = 0;
 
+function loadImg(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
 export async function initAvatar(canvasEl) {
   canvas = canvasEl;
   ctx = canvas.getContext("2d");
@@ -22,19 +34,32 @@ export async function initAvatar(canvasEl) {
   window.addEventListener("resize", resize);
 
   await Promise.all(
-    Object.entries(IMAGE_PATHS).map(
-      ([key, src]) =>
-        new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => {
-            images[key] = img;
-            resolve();
-          };
-          img.onerror = reject;
-          img.src = src;
-        })
-    )
+    Object.entries(SAMPLE_PATHS).map(async ([key, src]) => {
+      samples[key] = await loadImg(src);
+    })
   );
+}
+
+// アップロードされた立ち絵を反映する(blob=null でサンプルに戻す)
+export async function setCustomImage(key, blob) {
+  if (custom[key]) {
+    URL.revokeObjectURL(custom[key].src);
+    delete custom[key];
+  }
+  if (blob) {
+    custom[key] = await loadImg(URL.createObjectURL(blob));
+  }
+}
+
+export function clearCustomImages() {
+  for (const key of Object.keys(custom)) {
+    URL.revokeObjectURL(custom[key].src);
+    delete custom[key];
+  }
+}
+
+function pick(key) {
+  return custom[key] ?? samples[key];
 }
 
 function resize() {
@@ -59,9 +84,9 @@ export function drawAvatar(state) {
   ctx.fillRect(0, 0, w, h);
 
   // 状態に応じた画像選択(まばたき優先)
-  let img = images.closed;
-  if (state.blinking && images.blink) img = images.blink;
-  else if (state.mouthOpen && images.open) img = images.open;
+  let img = pick("closed");
+  if (state.blinking && pick("blink")) img = pick("blink");
+  else if (state.mouthOpen && pick("open")) img = pick("open");
   if (!img) return;
 
   // 発話中はバウンス量を増やし、無音時は減衰させる

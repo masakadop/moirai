@@ -29,6 +29,7 @@
 <!-- 設定パネル(画面タップでトグル) -->
 <div id="panel" class="hidden">
   <h2>設定</h2>
+
   <div class="row">
     <label>カメラ</label>
     <button id="flip-btn">前面 / 背面 切替</button>
@@ -41,7 +42,35 @@
     <label for="bg-color">背景色</label>
     <input type="color" id="bg-color" value="#00ff00">
   </div>
-  <p class="privacy small">映像は端末内処理のみ・外部送信なし</p>
+
+  <h3>立ち絵(PNG)</h3>
+  <div class="row">
+    <label>口閉じ</label>
+    <input type="file" id="img-closed" accept="image/*">
+  </div>
+  <div class="row">
+    <label>口開き</label>
+    <input type="file" id="img-open" accept="image/*">
+  </div>
+  <div class="row">
+    <label>目閉じ</label>
+    <input type="file" id="img-blink" accept="image/*">
+  </div>
+  <div class="row">
+    <button id="reset-images">サンプル画像に戻す</button>
+  </div>
+
+  <h3>検出感度</h3>
+  <div class="row">
+    <label for="mouth-sens">口パクしきい値 <span id="mouth-sens-val"></span></label>
+    <input type="range" id="mouth-sens" min="0.05" max="0.60" step="0.01">
+  </div>
+  <div class="row">
+    <label for="blink-sens">まばたきしきい値 <span id="blink-sens-val"></span></label>
+    <input type="range" id="blink-sens" min="0.20" max="0.80" step="0.01">
+  </div>
+
+  <p class="privacy small">画像・設定は端末内にのみ保存。映像の外部送信なし</p>
   <p class="hint small">画面タップでこのパネルを閉じます</p>
 </div>
 

@@ -86,6 +86,8 @@ html, body {
   bottom: 24px;
   transform: translateX(-50%);
   width: min(92vw, 360px);
+  max-height: 72vh;
+  overflow-y: auto;
   background: rgba(20, 22, 30, .92);
   color: #e8eaf2;
   border-radius: 16px;
@@ -94,6 +96,13 @@ html, body {
 }
 
 #panel h2 { font-size: 1rem; margin-bottom: 12px; }
+#panel h3 {
+  font-size: .85rem;
+  color: #a29bfe;
+  margin: 16px 0 4px;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+  padding-top: 12px;
+}
 
 #panel .row {
   display: flex;
@@ -128,6 +137,22 @@ html, body {
 #panel input[type="checkbox"] {
   width: 20px;
   height: 20px;
+}
+
+#panel input[type="file"] {
+  max-width: 180px;
+  font-size: .75rem;
+  color: #a0a6ba;
+}
+
+#panel input[type="range"] {
+  width: 140px;
+  accent-color: #6c5ce7;
+}
+
+#panel .row label span {
+  color: #a29bfe;
+  font-size: .8rem;
 }
 
 .small { font-size: .75rem !important; padding: 6px 10px; }
