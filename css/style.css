@@ -1,0 +1,135 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  background: #00ff00;
+}
+
+#avatar-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#camera-preview {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  width: 96px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, .6);
+  transform: scaleX(-1);
+  z-index: 5;
+}
+
+#status {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 22, 30, .85);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 999px;
+  font-size: .9rem;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+#start-screen {
+  position: fixed;
+  inset: 0;
+  background: #14161d;
+  color: #e8eaf2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  text-align: center;
+  z-index: 20;
+}
+
+#start-screen h1 { font-size: 1.8rem; }
+#start-screen p { max-width: 420px; line-height: 1.7; }
+
+.privacy {
+  background: rgba(108, 92, 231, .15);
+  border: 1px solid rgba(108, 92, 231, .5);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: .9rem;
+}
+
+#start-btn {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+  border: none;
+  border-radius: 999px;
+  padding: 16px 40px;
+  cursor: pointer;
+}
+#start-btn:active { transform: scale(.97); }
+
+.hint { color: #8a90a4; font-size: .85rem; }
+
+#panel {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  width: min(92vw, 360px);
+  background: rgba(20, 22, 30, .92);
+  color: #e8eaf2;
+  border-radius: 16px;
+  padding: 20px;
+  z-index: 15;
+}
+
+#panel h2 { font-size: 1rem; margin-bottom: 12px; }
+
+#panel .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0;
+  gap: 12px;
+}
+
+#panel label { font-size: .9rem; }
+
+#panel button {
+  background: #6c5ce7;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: .85rem;
+  cursor: pointer;
+}
+
+#panel input[type="color"] {
+  width: 48px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+#panel input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+.small { font-size: .75rem !important; padding: 6px 10px; }
+
+.hidden { display: none !important; }
