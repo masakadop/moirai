@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>PNGTuber Web</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- アバター表示 -->
+<canvas id="avatar-canvas"></canvas>
+
+<!-- カメラプレビュー(小窓) -->
+<video id="camera-preview" playsinline muted></video>
+
+<!-- ステータス表示 -->
+<div id="status" class="hidden"></div>
+
+<!-- 開始画面 -->
+<div id="start-screen">
+  <h1>🎭 PNGTuber Web</h1>
+  <p>フロントカメラの顔認識で PNG 立ち絵が口パク・まばたきします。</p>
+  <p class="privacy">📷 カメラ映像はこの端末内でのみ処理され、外部には一切送信されません。</p>
+  <button id="start-btn">カメラを許可して開始</button>
+  <p class="hint">読み込みに数秒かかることがあります</p>
+</div>
+
+<!-- 設定パネル(画面タップでトグル) -->
+<div id="panel" class="hidden">
+  <h2>設定</h2>
+  <div class="row">
+    <label>カメラ</label>
+    <button id="flip-btn">前面 / 背面 切替</button>
+  </div>
+  <div class="row">
+    <label for="preview-toggle">カメラプレビュー</label>
+    <input type="checkbox" id="preview-toggle" checked>
+  </div>
+  <div class="row">
+    <label for="bg-color">背景色</label>
+    <input type="color" id="bg-color" value="#00ff00">
+  </div>
+  <p class="privacy small">映像は端末内処理のみ・外部送信なし</p>
+  <p class="hint small">画面タップでこのパネルを閉じます</p>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
