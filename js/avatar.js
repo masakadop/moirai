@@ -43,9 +43,43 @@ function makeSprings() {
 }
 
 const hairPhysics = {
-  hairFront: { s: makeSprings(), k: 130, d: 6.0, tipGain: 0.7, sway: 0.02 },
+  hairFront: { s: makeSprings(), k: 110, d: 5.5, tipGain: 1.0, sway: 0.03 },
   hairBack: { s: makeSprings(), k: 80, d: 4.8, tipGain: 1.1, sway: 0.035 },
 };
+
+// 髪画像の「絵が実際にある縦範囲」(不透明ピクセルの上端〜下端)。
+// 前髪のようにキャンバス上部にしか絵がない画像でも、
+// その絵自身の丈を根元→毛先として揺らすために使う。
+const boundsCache = new WeakMap();
+
+function getVBounds(img) {
+  let b = boundsCache.get(img);
+  if (b) return b;
+  const S = 64;
+  const oc = document.createElement("canvas");
+  oc.width = S;
+  oc.height = S;
+  const octx = oc.getContext("2d");
+  octx.drawImage(img, 0, 0, S, S);
+  const data = octx.getImageData(0, 0, S, S).data;
+  let top = S;
+  let bottom = -1;
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      if (data[(y * S + x) * 4 + 3] > 8) {
+        if (y < top) top = y;
+        if (y > bottom) bottom = y;
+        break;
+      }
+    }
+  }
+  b =
+    bottom < top
+      ? { top: 0, bottom: 1 }
+      : { top: top / S, bottom: (bottom + 1) / S };
+  boundsCache.set(img, b);
+  return b;
+}
 
 let hairJiggle = 1; // 揺れ強さ(0 で無効)
 
@@ -216,7 +250,11 @@ export function drawAvatar(state, dtOverride) {
     const hw = hairImg.width * scale;
     const hh = hairImg.height * scale;
     const dyLag = (s.rootY.p - bounceY) * hairJiggle;
-    const maxBend = hh * 0.22;
+    // 絵の実寸(不透明範囲)を根元→毛先に正規化する
+    const vb = getVBounds(hairImg);
+    const span = Math.max(0.05, vb.bottom - vb.top);
+    const artH = hh * span; // 絵の実際の丈(描画ピクセル)
+    const maxBend = artH * 0.35;
 
     ctx.save();
     ctx.translate(cx, cy);
@@ -226,20 +264,25 @@ export function drawAvatar(state, dtOverride) {
     const imgStripH = hairImg.height / N_STRIP;
     let offX = 0;
     for (let m = 0; m < N_STRIP; m++) {
-      const t = (m + 0.5) / N_STRIP; // 0 = 根元(上端)、1 = 毛先(下端)
+      const t = (m + 0.5) / N_STRIP;
+      // 絵の範囲内での位置: 0 = 根元(絵の上端)、1 = 毛先(絵の下端)
+      const tArt = Math.min(1, Math.max(0, (t - vb.top) / span));
       // 節ばねの角度を根元→毛先で補間
-      const f = t * (N_SEG - 1);
+      const f = tArt * (N_SEG - 1);
       const i0 = Math.floor(f);
       const i1 = Math.min(N_SEG - 1, i0 + 1);
       const seg = s.segs[i0].p + (s.segs[i1].p - s.segs[i0].p) * (f - i0);
       // 常時の微揺れ(呼吸のようなうねり)
       const idle =
-        Math.sin(now * 1.8 + t * 2.5 + (key === "hairBack" ? 1.2 : 0)) * phys.sway;
+        Math.sin(now * 1.8 + tArt * 2.5 + (key === "hairBack" ? 1.2 : 0)) * phys.sway;
       const ang = (seg * phys.tipGain + idle) * hairJiggle;
-      // 角度を積分してたわみ(横ずれ)にする
-      offX += ang * stripH;
+      // 角度を積分してたわみ(横ずれ)にする。絵の丈に対して均等にしなるよう
+      // ストリップ高ではなく絵の丈基準で積分する
+      if (t >= vb.top && t <= vb.bottom) {
+        offX += ang * (hh / N_STRIP) * (1 / span) * 0.9;
+      }
       offX = Math.max(-maxBend, Math.min(maxBend, offX));
-      const dy = dyLag * (0.25 + 0.75 * t); // 縦の遅れも毛先ほど大きく
+      const dy = dyLag * (0.25 + 0.75 * tArt); // 縦の遅れも毛先ほど大きく
       ctx.drawImage(
         hairImg,
         0, m * imgStripH, hairImg.width, imgStripH,
