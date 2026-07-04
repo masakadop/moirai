@@ -1,14 +1,17 @@
 // 初期化と UI 制御
 
 import { startCamera, flipCamera } from "./camera.js";
-import { loadFaceLandmarker, detectFace, setThresholds } from "./face.js";
+import { loadFaceLandmarker, detectFace, setThresholds, isFaceReady } from "./face.js";
 import {
   initAvatar,
   drawAvatar,
   setBackground,
   setCustomImage,
   clearCustomImages,
+  setExpression,
+  hasImage,
   IMAGE_SLOTS,
+  EXPRESSION_SLOTS,
 } from "./avatar.js";
 import {
   loadSettings,
@@ -17,6 +20,7 @@ import {
   loadImage,
   clearImages,
 } from "./storage.js";
+import { startMic, stopMic, isMicActive, getMicLevel } from "./mic.js";
 
 const startScreen = document.getElementById("start-screen");
 const startBtn = document.getElementById("start-btn");
@@ -32,14 +36,17 @@ const mouthSensVal = document.getElementById("mouth-sens-val");
 const blinkSens = document.getElementById("blink-sens");
 const blinkSensVal = document.getElementById("blink-sens-val");
 const resetImagesBtn = document.getElementById("reset-images");
+const micToggle = document.getElementById("mic-toggle");
+const exprBar = document.getElementById("expr-bar");
 
 const TARGET_FPS = 24; // スマホの発熱・電池対策
 const FRAME_INTERVAL = 1000 / TARGET_FPS;
+const MIC_MOUTH_THRESHOLD = 0.05; // マイク口パクの音量しきい値(RMS)
 
 let running = false;
 let lastFrameTime = 0;
 let lastVideoTime = -1;
-let lastState = { detected: false, mouthOpen: false, blinking: false, mouthLevel: 0 };
+let lastState = { detected: false, mouthOpen: false, blinking: false, mouthLevel: 0, roll: 0 };
 let noFaceSince = 0;
 
 function showStatus(text) {
@@ -64,10 +71,11 @@ function applySettings(s) {
   blinkSensVal.textContent = Number(s.blinkThreshold).toFixed(2);
   previewToggle.checked = s.showPreview;
   video.style.display = s.showPreview ? "" : "none";
+  micToggle.checked = s.micFallback;
 }
 
 async function restoreCustomImages() {
-  for (const key of IMAGE_SLOTS) {
+  for (const key of [...IMAGE_SLOTS, ...EXPRESSION_SLOTS]) {
     try {
       const blob = await loadImage(key);
       if (blob) await setCustomImage(key, blob);
@@ -75,7 +83,33 @@ async function restoreCustomImages() {
       console.warn("画像の復元に失敗:", key, err);
     }
   }
+  updateExprBar();
 }
+
+// --- 表情切替バー ---
+
+function updateExprBar() {
+  let anyPreset = false;
+  for (const btn of exprBar.querySelectorAll("button[data-expr]")) {
+    const key = btn.dataset.expr;
+    if (!key) continue; // 「通常」は常に表示
+    const available = hasImage(key);
+    btn.classList.toggle("hidden", !available);
+    if (available) anyPreset = true;
+  }
+  exprBar.classList.toggle("hidden", !running || !anyPreset);
+}
+
+exprBar.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-expr]");
+  if (!btn) return;
+  setExpression(btn.dataset.expr || null);
+  for (const b of exprBar.querySelectorAll("button")) {
+    b.classList.toggle("active", b === btn);
+  }
+});
+
+// --- 起動 ---
 
 async function start() {
   startBtn.disabled = true;
@@ -84,12 +118,43 @@ async function start() {
     await startCamera(video);
 
     showStatus("顔認識モデルを読込中…");
-    await Promise.all([loadFaceLandmarker(), initAvatar(canvas)]);
+    await initAvatar(canvas);
+    let faceError = null;
+    try {
+      await loadFaceLandmarker();
+    } catch (err) {
+      faceError = err;
+      console.error("顔認識モデルの読込に失敗:", err);
+    }
+
+    if (faceError) {
+      // 顔認識が使えない場合はマイク口パクにフォールバック
+      showStatus("顔認識が使えないため、マイク口パクで動作します");
+      try {
+        await startMic();
+        micToggle.checked = true;
+        saveSettings({ micFallback: true });
+      } catch {
+        showStatus("顔認識モデルの読込に失敗しました。通信環境を確認して再読み込みしてください");
+        startBtn.disabled = false;
+        return;
+      }
+    } else if (micToggle.checked) {
+      // 設定でマイクフォールバックが有効なら起動しておく
+      try {
+        await startMic();
+      } catch {
+        micToggle.checked = false;
+        saveSettings({ micFallback: false });
+      }
+    }
+
     await restoreCustomImages();
 
     startScreen.classList.add("hidden");
-    hideStatus();
+    if (!faceError) hideStatus();
     running = true;
+    updateExprBar();
     requestAnimationFrame(loop);
   } catch (err) {
     console.error(err);
@@ -116,15 +181,21 @@ function loop(now) {
     lastState = detectFace(video, performance.now());
   }
 
-  if (lastState.detected) {
+  const state = { ...lastState };
+
+  if (state.detected) {
     noFaceSince = 0;
-    hideStatus();
+    if (isFaceReady()) hideStatus();
+  } else if (isMicActive()) {
+    // 顔が検出できない時はマイク音量で口パク
+    state.mouthOpen = getMicLevel() > MIC_MOUTH_THRESHOLD;
+    noFaceSince = 0;
   } else {
     if (!noFaceSince) noFaceSince = now;
     if (now - noFaceSince > 1500) showStatus("顔が検出できません");
   }
 
-  drawAvatar(lastState);
+  drawAvatar(state);
 }
 
 // --- UI イベント ---
@@ -171,8 +242,23 @@ blinkSens.addEventListener("input", () => {
   saveSettings({ blinkThreshold: v });
 });
 
-// 立ち絵アップロード
-for (const key of IMAGE_SLOTS) {
+micToggle.addEventListener("change", async () => {
+  if (micToggle.checked) {
+    try {
+      await startMic();
+    } catch {
+      micToggle.checked = false;
+      showStatus("マイクの使用が許可されませんでした");
+      return;
+    }
+  } else {
+    stopMic();
+  }
+  saveSettings({ micFallback: micToggle.checked });
+});
+
+// 立ち絵・表情プリセットのアップロード
+for (const key of [...IMAGE_SLOTS, ...EXPRESSION_SLOTS]) {
   const input = document.getElementById("img-" + key);
   input.addEventListener("change", async () => {
     const file = input.files?.[0];
@@ -180,6 +266,7 @@ for (const key of IMAGE_SLOTS) {
     try {
       await setCustomImage(key, file);
       await saveImage(key, file);
+      updateExprBar();
     } catch (err) {
       console.error(err);
       showStatus("画像の読み込みに失敗しました");
@@ -190,10 +277,18 @@ for (const key of IMAGE_SLOTS) {
 resetImagesBtn.addEventListener("click", async () => {
   clearCustomImages();
   await clearImages();
-  for (const key of IMAGE_SLOTS) {
+  for (const key of [...IMAGE_SLOTS, ...EXPRESSION_SLOTS]) {
     document.getElementById("img-" + key).value = "";
   }
+  updateExprBar();
 });
 
 // 起動時に保存済み設定を反映
 applySettings(loadSettings());
+
+// PWA: Service Worker 登録(GitHub Pages のサブパス配信に対応する相対パス)
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch((err) => {
+    console.warn("Service Worker の登録に失敗:", err);
+  });
+}
