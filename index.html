@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>PNGTuber Web</title>
+<meta name="theme-color" content="#14161d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -16,6 +19,13 @@
 
 <!-- ステータス表示 -->
 <div id="status" class="hidden"></div>
+
+<!-- 表情切替バー(表情プリセット画像がある時のみ表示) -->
+<div id="expr-bar" class="hidden">
+  <button data-expr="" class="active">通常</button>
+  <button data-expr="joy" class="hidden">喜び</button>
+  <button data-expr="surprise" class="hidden">驚き</button>
+</div>
 
 <!-- 開始画面 -->
 <div id="start-screen">
@@ -58,6 +68,22 @@
   </div>
   <div class="row">
     <button id="reset-images">サンプル画像に戻す</button>
+  </div>
+
+  <h3>表情プリセット(任意)</h3>
+  <div class="row">
+    <label>喜び</label>
+    <input type="file" id="img-joy" accept="image/*">
+  </div>
+  <div class="row">
+    <label>驚き</label>
+    <input type="file" id="img-surprise" accept="image/*">
+  </div>
+
+  <h3>マイク口パク</h3>
+  <div class="row">
+    <label for="mic-toggle">顔が検出できない時にマイク音量で口パク</label>
+    <input type="checkbox" id="mic-toggle">
   </div>
 
   <h3>検出感度</h3>

@@ -1,4 +1,4 @@
-// Canvas 描画: 画像切替(口/目)+ 発話中のバウンス演出
+// Canvas 描画: 画像切替(口/目/表情)+ 傾き追従 + 発話中のバウンス演出
 
 const SAMPLE_PATHS = {
   closed: "assets/sample/closed.png", // 待機(目開き・口閉じ)
@@ -7,16 +7,22 @@ const SAMPLE_PATHS = {
 };
 
 export const IMAGE_SLOTS = Object.keys(SAMPLE_PATHS);
+export const EXPRESSION_SLOTS = ["joy", "surprise"]; // 表情プリセット(アップロード式)
 
 const samples = {};
 const custom = {};
 let canvas = null;
 let ctx = null;
 let bgColor = "#00ff00";
+let expression = null; // 表情プリセットの上書き(null = 通常)
 
-// バウンス演出の状態
+// バウンス・傾きの状態
 let bouncePhase = 0;
 let bounceAmp = 0;
+let smoothRoll = 0;
+
+const MAX_ROLL = 0.45;   // 傾きの上限(ラジアン)
+const ROLL_FACTOR = 0.8; // 実際の傾きに対する追従率
 
 function loadImg(src) {
   return new Promise((resolve, reject) => {
@@ -40,7 +46,7 @@ export async function initAvatar(canvasEl) {
   );
 }
 
-// アップロードされた立ち絵を反映する(blob=null でサンプルに戻す)
+// アップロードされた画像を反映する(blob=null でサンプル/未設定に戻す)
 export async function setCustomImage(key, blob) {
   if (custom[key]) {
     URL.revokeObjectURL(custom[key].src);
@@ -56,6 +62,20 @@ export function clearCustomImages() {
     URL.revokeObjectURL(custom[key].src);
     delete custom[key];
   }
+  expression = null;
+}
+
+export function hasImage(key) {
+  return !!(custom[key] ?? samples[key]);
+}
+
+/** 表情プリセットを設定(null で通常に戻す) */
+export function setExpression(key) {
+  expression = key && hasImage(key) ? key : null;
+}
+
+export function getExpression() {
+  return expression;
 }
 
 function pick(key) {
@@ -74,7 +94,7 @@ export function setBackground(color) {
 
 /**
  * アバターを 1 フレーム描画する。
- * @param {{ mouthOpen: boolean, blinking: boolean, mouthLevel: number }} state
+ * @param {{ mouthOpen: boolean, blinking: boolean, mouthLevel: number, roll: number }} state
  */
 export function drawAvatar(state) {
   if (!ctx) return;
@@ -83,9 +103,10 @@ export function drawAvatar(state) {
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, w, h);
 
-  // 状態に応じた画像選択(まばたき優先)
+  // 画像選択: 表情プリセット > まばたき > 口開き > 通常
   let img = pick("closed");
-  if (state.blinking && pick("blink")) img = pick("blink");
+  if (expression && pick(expression)) img = pick(expression);
+  else if (state.blinking && pick("blink")) img = pick("blink");
   else if (state.mouthOpen && pick("open")) img = pick("open");
   if (!img) return;
 
@@ -95,12 +116,20 @@ export function drawAvatar(state) {
   bouncePhase += 0.35;
   const bounceY = Math.sin(bouncePhase) * bounceAmp * h * 0.012;
 
+  // 顔の傾きに滑らかに追従
+  const targetRoll = Math.max(-MAX_ROLL, Math.min(MAX_ROLL, (state.roll || 0) * ROLL_FACTOR));
+  smoothRoll += (targetRoll - smoothRoll) * 0.2;
+
   // 画面にフィットさせて中央下寄せで描画
   const scale = Math.min(w / img.width, h / img.height) * 0.85;
   const dw = img.width * scale;
   const dh = img.height * scale;
-  const dx = (w - dw) / 2;
-  const dy = h - dh - h * 0.03 + bounceY;
+  const cx = w / 2;
+  const cy = h - dh / 2 - h * 0.03 + bounceY;
 
-  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(smoothRoll);
+  ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+  ctx.restore();
 }
