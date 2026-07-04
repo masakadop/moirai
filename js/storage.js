@@ -7,6 +7,8 @@ const DEFAULT_SETTINGS = {
   mouthThreshold: 0.25,
   blinkThreshold: 0.45,
   showPreview: true,
+  micFallback: false,
+  hairJiggle: 1,
 };
 
 export function loadSettings() {

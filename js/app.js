@@ -9,8 +9,10 @@ import {
   setCustomImage,
   clearCustomImages,
   setExpression,
+  setHairJiggle,
   hasImage,
   IMAGE_SLOTS,
+  HAIR_SLOTS,
   EXPRESSION_SLOTS,
 } from "./avatar.js";
 import {
@@ -38,6 +40,8 @@ const blinkSensVal = document.getElementById("blink-sens-val");
 const resetImagesBtn = document.getElementById("reset-images");
 const micToggle = document.getElementById("mic-toggle");
 const exprBar = document.getElementById("expr-bar");
+const hairJiggle = document.getElementById("hair-jiggle");
+const hairJiggleVal = document.getElementById("hair-jiggle-val");
 
 const TARGET_FPS = 24; // スマホの発熱・電池対策
 const FRAME_INTERVAL = 1000 / TARGET_FPS;
@@ -72,10 +76,13 @@ function applySettings(s) {
   previewToggle.checked = s.showPreview;
   video.style.display = s.showPreview ? "" : "none";
   micToggle.checked = s.micFallback;
+  setHairJiggle(s.hairJiggle);
+  hairJiggle.value = s.hairJiggle;
+  hairJiggleVal.textContent = Number(s.hairJiggle).toFixed(1);
 }
 
 async function restoreCustomImages() {
-  for (const key of [...IMAGE_SLOTS, ...EXPRESSION_SLOTS]) {
+  for (const key of [...IMAGE_SLOTS, ...HAIR_SLOTS, ...EXPRESSION_SLOTS]) {
     try {
       const blob = await loadImage(key);
       if (blob) await setCustomImage(key, blob);
@@ -257,8 +264,15 @@ micToggle.addEventListener("change", async () => {
   saveSettings({ micFallback: micToggle.checked });
 });
 
-// 立ち絵・表情プリセットのアップロード
-for (const key of [...IMAGE_SLOTS, ...EXPRESSION_SLOTS]) {
+hairJiggle.addEventListener("input", () => {
+  const v = Number(hairJiggle.value);
+  setHairJiggle(v);
+  hairJiggleVal.textContent = v.toFixed(1);
+  saveSettings({ hairJiggle: v });
+});
+
+// 立ち絵・髪・表情プリセットのアップロード
+for (const key of [...IMAGE_SLOTS, ...HAIR_SLOTS, ...EXPRESSION_SLOTS]) {
   const input = document.getElementById("img-" + key);
   input.addEventListener("change", async () => {
     const file = input.files?.[0];
@@ -277,7 +291,7 @@ for (const key of [...IMAGE_SLOTS, ...EXPRESSION_SLOTS]) {
 resetImagesBtn.addEventListener("click", async () => {
   clearCustomImages();
   await clearImages();
-  for (const key of [...IMAGE_SLOTS, ...EXPRESSION_SLOTS]) {
+  for (const key of [...IMAGE_SLOTS, ...HAIR_SLOTS, ...EXPRESSION_SLOTS]) {
     document.getElementById("img-" + key).value = "";
   }
   updateExprBar();

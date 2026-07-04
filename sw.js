@@ -2,7 +2,7 @@
 // - 同一オリジン: ネットワーク優先(更新を即反映)、失敗時はキャッシュ
 // - CDN(MediaPipe): キャッシュ優先(URL がバージョン固定のため)
 
-const CACHE_NAME = "pngtuber-v1";
+const CACHE_NAME = "pngtuber-v2";
 
 const APP_SHELL = [
   "./",
@@ -17,6 +17,8 @@ const APP_SHELL = [
   "assets/sample/closed.png",
   "assets/sample/open.png",
   "assets/sample/blink.png",
+  "assets/sample/hair_front.png",
+  "assets/sample/hair_back.png",
   "assets/icons/icon-192.png",
   "assets/icons/icon-512.png",
   "manifest.webmanifest",
