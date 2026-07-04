@@ -2,7 +2,7 @@
 // - 同一オリジン: ネットワーク優先(更新を即反映)、失敗時はキャッシュ
 // - CDN(MediaPipe): キャッシュ優先(URL がバージョン固定のため)
 
-const CACHE_NAME = "pngtuber-v2";
+const CACHE_NAME = "pngtuber-v3";
 
 const APP_SHELL = [
   "./",

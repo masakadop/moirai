@@ -43,8 +43,8 @@ const exprBar = document.getElementById("expr-bar");
 const hairJiggle = document.getElementById("hair-jiggle");
 const hairJiggleVal = document.getElementById("hair-jiggle-val");
 
-const TARGET_FPS = 24; // スマホの発熱・電池対策
-const FRAME_INTERVAL = 1000 / TARGET_FPS;
+const DETECT_FPS = 24; // 顔認識の頻度(スマホの発熱・電池対策)。描画は毎フレーム行う
+const DETECT_INTERVAL = 1000 / DETECT_FPS;
 const MIC_MOUTH_THRESHOLD = 0.05; // マイク口パクの音量しきい値(RMS)
 
 let running = false;
@@ -178,30 +178,31 @@ function loop(now) {
   if (!running) return;
   requestAnimationFrame(loop);
 
-  // フレームレート制御
-  if (now - lastFrameTime < FRAME_INTERVAL) return;
-  lastFrameTime = now;
+  // 顔認識は 24fps に間引く(同じ映像フレームは二重に推論しない)
+  if (now - lastFrameTime >= DETECT_INTERVAL) {
+    lastFrameTime = now;
+    if (video.currentTime !== lastVideoTime) {
+      lastVideoTime = video.currentTime;
+      lastState = detectFace(video, performance.now());
+    }
 
-  // 同じ映像フレームを二重に推論しない
-  if (video.currentTime !== lastVideoTime) {
-    lastVideoTime = video.currentTime;
-    lastState = detectFace(video, performance.now());
+    if (lastState.detected) {
+      noFaceSince = 0;
+      if (isFaceReady()) hideStatus();
+    } else if (isMicActive()) {
+      noFaceSince = 0;
+    } else {
+      if (!noFaceSince) noFaceSince = now;
+      if (now - noFaceSince > 1500) showStatus("顔が検出できません");
+    }
   }
 
+  // 描画は毎フレーム(髪の揺れを滑らかに動かすため)
   const state = { ...lastState };
-
-  if (state.detected) {
-    noFaceSince = 0;
-    if (isFaceReady()) hideStatus();
-  } else if (isMicActive()) {
+  if (!state.detected && isMicActive()) {
     // 顔が検出できない時はマイク音量で口パク
     state.mouthOpen = getMicLevel() > MIC_MOUTH_THRESHOLD;
-    noFaceSince = 0;
-  } else {
-    if (!noFaceSince) noFaceSince = now;
-    if (now - noFaceSince > 1500) showStatus("顔が検出できません");
   }
-
   drawAvatar(state);
 }
 
