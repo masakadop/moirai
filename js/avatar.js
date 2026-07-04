@@ -32,7 +32,7 @@ const ROLL_FACTOR = 0.8; // 実際の傾きに対する追従率
 // 髪を根元→毛先の N_SEG 節に分け、体の動きの遅れを節ごとに順番に伝播させる。
 // 画像は N_STRIP 枚の横スライスに分けて、節の角度を積分した「たわみ」で描画する。
 const N_SEG = 6;
-const N_STRIP = 18;
+const N_STRIP = 36;
 
 function makeSprings() {
   return {
@@ -43,8 +43,8 @@ function makeSprings() {
 }
 
 const hairPhysics = {
-  hairFront: { s: makeSprings(), k: 130, d: 6.0, tipGain: 0.9, sway: 0.02 },
-  hairBack: { s: makeSprings(), k: 80, d: 4.5, tipGain: 1.5, sway: 0.035 },
+  hairFront: { s: makeSprings(), k: 130, d: 6.0, tipGain: 0.7, sway: 0.02 },
+  hairBack: { s: makeSprings(), k: 80, d: 4.8, tipGain: 1.1, sway: 0.035 },
 };
 
 let hairJiggle = 1; // 揺れ強さ(0 で無効)
@@ -216,7 +216,7 @@ export function drawAvatar(state, dtOverride) {
     const hw = hairImg.width * scale;
     const hh = hairImg.height * scale;
     const dyLag = (s.rootY.p - bounceY) * hairJiggle;
-    const maxBend = hh * 0.3;
+    const maxBend = hh * 0.22;
 
     ctx.save();
     ctx.translate(cx, cy);
